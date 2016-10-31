@@ -5,14 +5,15 @@
 # TODO: Read PID parameters and set them in the Crazyflie parameters
 
 import rospy
+import tf
 from geometry_msgs.msg import PoseStamped, Twist
 from std_srvs.srv import Empty
 from crazyflie_driver.srv import UpdateParams
 import time
 
 # Takeoff and landing speed in ms^-1
-TAKEOFF_SPEED = 1.0
-LANDING_SPEED = 0.5
+TAKEOFF_SPEED = 0.15
+LANDING_SPEED = 0.15
 UPDATE_RATE = 30
 
 
@@ -83,6 +84,13 @@ class ControllerBridge:
         else:
             self.target_setpoint.linear.z = 1
             rospy.logwarn("Cannot set <=0 Z setpoint!")
+        # Get yaw from transformed quaternion
+        #q = (goal.pose.orientation.x,
+        #     goal.pose.orientation.y,
+        #     goal.pose.orientation.z,
+        #     goal.pose.orientation.w)
+        #self.target_setpoint.angular.z = tf.transformations.euler_from_quaternion(q)[2]
+        #self.target_setpoint.angular.z *= 180/3.14159 # Convert from rad to degrees
 
     def takeoff(self, req):
 
