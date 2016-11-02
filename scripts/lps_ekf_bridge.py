@@ -67,10 +67,9 @@ if __name__ == "__main__":
 
     n_anchors = rospy.get_param("n_anchors")
     for i in range(n_anchors):
-        position = rospy.get_param(rospy.get_namespace() +
-                                   "anchor{}_pos".format(i))
+        position = rospy.get_param("anchor{}_pos".format(i))
         rospy.loginfo("Anchor {} at {}".format(i, position))
-        name = rospy.get_namespace()+"anchorpos/anchor{}".format(i)
+        name = "anchorpos/anchor{}".format(i)
         rospy.set_param(name + "x", position[0])
         rospy.set_param(name + "y", position[1])
         rospy.set_param(name + "z", position[2])
@@ -83,7 +82,5 @@ if __name__ == "__main__":
         update_params(["anchorpos/enable"])
 
     position_pub = rospy.Publisher("crazyflie_position", Point, queue_size=10)
-
-    rospy.Subscriber("log_kfpos", GenericLogData, callback)
 
     rospy.spin()
