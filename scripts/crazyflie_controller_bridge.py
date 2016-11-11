@@ -20,10 +20,12 @@ class ControllerBridge:
     def __init__(self):
         self.target_setpoint = Twist()
         self.landed_setpoint = Twist()
+        self.curr_pos = PoseStamped()
         self.flying = False
-        self.taking_off = False
         self.landing = False
         self.transient_height = 0
+        self.curr_z_vel = 0
+        self.landing_ticks = 0
 
         self.assisted_takeoff = rospy.get_param("~assisted_takeoff", True)
         self.assisted_landing = rospy.get_param("~assisted_landing", True)
@@ -31,6 +33,7 @@ class ControllerBridge:
                                                     False)
 
         self.goal_sub = rospy.Subscriber("goal", PoseStamped, self.new_goal)
+        self.pose_sub  = rospy.Subscriber("pose", PoseStamped, self.pose_cb)
         self.cmd_vel_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
 
         # Services
@@ -47,42 +50,35 @@ class ControllerBridge:
     def run(self):
         rospy.spin()
 
+    def pose_cb(self, data):
+        self.curr_z_vel = (data.pose.position.z - self.curr_pos.pose.position.z) * UPDATE_RATE
+        self.curr_pos = data
+
     def send_setpoint(self, event):
         if self.flying:
-            if self.taking_off:
-                sp = Twist()
-                sp.linear.x = self.target_setpoint.linear.x
-                sp.linear.y = self.target_setpoint.linear.y
-                sp.linear.z = self.transient_height*1000.0
-                self.cmd_vel_pub.publish(sp)
-                self.transient_height += TAKEOFF_SPEED/UPDATE_RATE
-                if sp.linear.z >= self.target_setpoint.linear.z:
-                    self.transient_height = 0
-                    self.taking_off = False
-            elif self.landing:
-                sp = Twist()
-                sp.linear.x = self.target_setpoint.linear.x
-                sp.linear.y = self.target_setpoint.linear.y
-                sp.linear.z = self.transient_height*1000.0
-                self.cmd_vel_pub.publish(sp)
-                self.transient_height -= LANDING_SPEED/UPDATE_RATE
-                if self.transient_height <= 0:
-                    self.transient_height = 0
-                    self.landing = False
-                    self.flying = False
-            else:
-                self.cmd_vel_pub.publish(self.target_setpoint)
+            sp = Twist()
+            sp.linear = self.target_setpoint.linear
+            if self.landing:
+                sp.linear.z = -1
+                print(self.landing_ticks, self.curr_z_vel)
+                if abs(self.curr_z_vel) < 0.4:
+                    self.landing_ticks += 1
+                    if self.landing_ticks >= 0.5*UPDATE_RATE:
+                        self.landing_ticks = 0
+                        rospy.set_param("flightmode/posSet", 0)
+                        self._update_params(["flightmode/posSet"])
+                        self.landing = False
+                        self.flying = False
+                else:
+                    self.landing_ticks = 0
+            self.cmd_vel_pub.publish(sp)
         else:
             self.cmd_vel_pub.publish(self.landed_setpoint)
 
     def new_goal(self, goal):
         self.target_setpoint.linear.x = goal.pose.position.x
         self.target_setpoint.linear.y = goal.pose.position.y
-        if goal.pose.position.z > 0:
-            self.target_setpoint.linear.z = goal.pose.position.z*1000
-        else:
-            self.target_setpoint.linear.z = 1
-            rospy.logwarn("Cannot set <=0 Z setpoint!")
+        self.target_setpoint.linear.z = goal.pose.position.z
 
     def takeoff(self, req):
 
@@ -94,22 +90,17 @@ class ControllerBridge:
         self._update_params(["flightmode/posSet"])
         if self.landing or (not self.flying) and self.assisted_takeoff:
             self.flying = True
-            self.taking_off = True
             self.landing = False
         elif not self.assisted_takeoff:
             self.flying = True
-            self.taking_off = False
             self.landing = False
         return ()
 
     def land(self, req):
         if self.flying and self.assisted_landing and not self.landing:
-            self.taking_off = False
             self.landing = True
-            self.transient_height = self.target_setpoint.linear.z/1000.0
         elif not self.assisted_landing:
             self.flying = False
-            self.taking_off = False
             self.landing = False
 
         return ()
