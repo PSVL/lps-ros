@@ -60,7 +60,6 @@ class ControllerBridge:
             sp.linear = self.target_setpoint.linear
             if self.landing:
                 sp.linear.z = -1
-                print(self.landing_ticks, self.curr_z_vel)
                 if abs(self.curr_z_vel) < 0.4:
                     self.landing_ticks += 1
                     if self.landing_ticks >= 0.5*UPDATE_RATE:
