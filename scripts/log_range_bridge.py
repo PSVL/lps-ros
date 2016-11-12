@@ -23,16 +23,6 @@ def callback(data):
 
     range_pub.publish(ranges)
 
-def vel_cb(data):
-    z = Float32()
-    z.data = data.data[2]
-    vel_z_pub.publish(z)
-
-def vel_sp_cb(data):
-    z = Float32()
-    z.data = data.data[2]
-    vel_z_sp_pub.publish(z)
-
 if __name__ == "__main__":
     rospy.init_node('log_range_bridge')
 
