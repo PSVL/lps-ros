@@ -3,7 +3,7 @@
   <arg name="frame" default="base_link" />
   <arg name="joy_dev" default="/dev/input/js0" />
 
-  <arg name="uri0" default="radio://0/98/2M/E7E7E7E7E7" />
+  <arg name="uri0" default="radio://0/80/2M/E7E7E7E700" />
   <arg name="x0" default="-1" />
   <arg name="y0" default="2" />
   <arg name="z0" default="1" />
@@ -20,11 +20,11 @@
       <param name="uri" value="$(arg uri0)" />
       <param name="tf_prefix" value="crazyflie0" />
       <rosparam>
-        genericLogTopics: ["log_kfpos", "log_kfqt", "log_vzpid"]
+        genericLogTopics: ["log_kfpos", "log_kfqt", "log_range"]
         genericLogTopicFrequencies: [30, 30, 10]
         genericLogTopic_log_kfpos_Variables: ["kalman.stateX", "kalman.stateY", "kalman.stateZ"]
         genericLogTopic_log_kfqt_Variables: ["kalman.q0", "kalman.q1", "kalman.q2", "kalman.q3"]
-        genericLogTopic_log_vzpid_Variables: ["posCtl.VZp", "posCtl.VZi", "posCtl.VZd"]
+        genericLogTopic_log_range_Variables: ["range.range"]
       </rosparam>
     </node>
 
