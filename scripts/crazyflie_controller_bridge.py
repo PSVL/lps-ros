@@ -62,10 +62,12 @@ class ControllerBridge:
                 sp.linear.z = -1
                 if abs(self.curr_z_vel) < 0.4:
                     self.landing_ticks += 1
+                    print(self.landing_ticks, self.curr_z_vel)
                     if self.landing_ticks >= 0.5*UPDATE_RATE:
                         self.landing_ticks = 0
                         rospy.set_param("flightmode/posSet", 0)
-                        self._update_params(["flightmode/posSet"])
+                        rospy.set_param("flightmode/althold", 0)
+                        self._update_params(["flightmode/posSet", "flightmode/althold"])
                         self.landing = False
                         self.flying = False
                 else:
